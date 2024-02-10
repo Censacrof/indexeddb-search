@@ -9,18 +9,18 @@ class FullTextSearchDatabase extends Dexie {
 
     this.version(1).stores({
       wordIndex: "&word",
-      indexedObject: "&id, *words",
+      indexedObject: "&id, *__words",
     });
   }
 }
 
 export type WordIndex = {
   word: string;
-  occourrences: Set<string>;
+  occourrences: string[];
 };
 
 export type IndexedObject<T> = T & {
-  __words: Set<string>;
+  __words: string[];
 };
 
 export type User = {
@@ -46,7 +46,7 @@ export class SearchSet {
   constructor(private db = new FullTextSearchDatabase()) {}
 
   async ingest(user: User) {
-    const words = extractUserWords(user);
+    const words = [...extractUserWords(user)];
 
     await this.db.indexedObject.put({
       ...user,
@@ -60,11 +60,13 @@ export class SearchSet {
         if (!wordIndex) {
           wordIndex = {
             word,
-            occourrences: new Set([user.id]),
+            occourrences: [user.id],
           };
         }
 
-        wordIndex.occourrences.add(user.id);
+        wordIndex.occourrences = [
+          ...new Set([...wordIndex.occourrences, user.id]),
+        ];
         await this.db.wordIndex.put(wordIndex);
       }),
     );
