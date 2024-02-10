@@ -70,7 +70,7 @@ export default function UserSearch() {
         </thead>
         <tbody>
           {result.map((user) => (
-            <tr>
+            <tr key={user.id}>
               <td>{user.id}</td>
               <td>{user.name}</td>
               <td>{user.address}</td>
