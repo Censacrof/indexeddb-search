@@ -19,7 +19,7 @@ export default function UserGenerator() {
       >
         Ingest user
       </Button>
-      <Pre>{JSON.stringify(userToIngest, undefined, 4)}</Pre>
+      <Pre>{JSON.stringify(userToIngest, undefined, 2)}</Pre>
     </div>
   );
 }
