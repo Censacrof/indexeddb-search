@@ -7,7 +7,7 @@ class FullTextSearchDatabase extends Dexie {
     super("FullTextSearchDatabase");
 
     this.version(1).stores({
-      indexedObject: "&id, *__words",
+      indexedObject: "&id, *__words, *__syllables",
     });
   }
 }
@@ -19,6 +19,7 @@ export type WordIndex = {
 
 export type IndexedObject<T> = T & {
   __words: string[];
+  __syllables: string[];
 };
 
 export type User = {
@@ -28,15 +29,34 @@ export type User = {
   phoneNumber: string;
 };
 
-function tokenize(str: string): string[] {
+function getWords(str: string): string[] {
   return str.toLowerCase().split(/\s+/gm);
 }
 
 function extractUserWords(user: User): Set<string> {
   return new Set([
-    ...tokenize(user.name),
-    ...tokenize(user.address),
-    ...tokenize(user.phoneNumber),
+    ...getWords(user.name),
+    ...getWords(user.address),
+    ...getWords(user.phoneNumber),
+  ]);
+}
+
+function getSyllables(str: string): string[] {
+  str = str.toLowerCase();
+
+  const syllables = new Array<string>();
+  for (let i = 1; i < str.length; i++) {
+    syllables.push(`${str[i - 1]}${str[i]}`);
+  }
+
+  return syllables;
+}
+
+function extractUserSyllables(user: User): Set<string> {
+  return new Set([
+    ...getSyllables(user.name),
+    ...getSyllables(user.address),
+    ...getSyllables(user.phoneNumber),
   ]);
 }
 
@@ -45,14 +65,15 @@ export class SearchSet {
 
   async ingest(...users: User[]) {
     const indexedObjectBulk = new Array<IndexedObject<User>>();
-    // const wordIndexBulk = new Array<IndexedObject<User>>(users.length * 10);
 
     users.forEach((user) => {
       const words = extractUserWords(user);
+      const syllables = extractUserSyllables(user);
 
       indexedObjectBulk.push({
         ...user,
         __words: [...words],
+        __syllables: [...syllables],
       });
     });
 
