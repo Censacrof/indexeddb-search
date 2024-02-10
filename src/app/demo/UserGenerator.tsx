@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { useState } from "react";
 import Button from "../../common/components/Button";
+import Pre from "../../common/components/Pre";
 import { User } from "../../features/indexeddbSearch/indexeddbSearch";
 import { useSearchSetContext } from "../App";
 
@@ -18,9 +19,7 @@ export default function UserGenerator() {
       >
         Ingest user
       </Button>
-      <pre className="rounded border border-gray-400 bg-gray-800 p-2">
-        {JSON.stringify(userToIngest, undefined, 4)}
-      </pre>
+      <Pre>{JSON.stringify(userToIngest, undefined, 4)}</Pre>
     </div>
   );
 }
