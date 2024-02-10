@@ -31,7 +31,7 @@ export type User = {
 };
 
 function tokenize(str: string): string[] {
-  return str.split(/\s+/gm);
+  return str.toLowerCase().split(/\s+/gm);
 }
 
 function extractUserWords(user: User): Set<string> {
@@ -68,5 +68,32 @@ export class SearchSet {
         await this.db.wordIndex.put(wordIndex);
       }),
     );
+  }
+
+  async searchStartsWith(term: string): Promise<User[]> {
+    const lowerCaseTerm = term.toLowerCase();
+
+    const wordIndices = await this.db.wordIndex
+      .where("word")
+      .startsWith(lowerCaseTerm)
+      .distinct()
+      .toArray();
+
+    const allOccourrences = new Set<string>();
+    for (const wordIndex of wordIndices) {
+      wordIndex.occourrences.forEach((occourrence) => {
+        allOccourrences.add(occourrence);
+      });
+    }
+
+    const result = (
+      await Promise.all(
+        [...allOccourrences].map((id) => this.db.indexedObject.get(id)),
+      )
+    ).filter((u): u is IndexedObject<User> => {
+      return !!u;
+    });
+
+    return result;
   }
 }
