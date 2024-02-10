@@ -26,7 +26,14 @@ export default function UserSearch() {
           console.log(await searchSet.searchStartsWith(searchTerm));
         }}
       >
-        Search
+        Search "starts with"
+      </Button>
+      <Button
+        onClick={async () => {
+          console.log(await searchSet.searchContains(searchTerm));
+        }}
+      >
+        Search "contains"
       </Button>
     </div>
   );

@@ -8,17 +8,49 @@ import { useSearchSetContext } from "../App";
 export default function UserGenerator() {
   const { searchSet } = useSearchSetContext();
   const [userToIngest, setUserToIngest] = useState(randomUser());
+  const [isIngestDisabled, setIsIngestDisabled] = useState(false);
 
   return (
     <div className="flex gap-2">
-      <Button
-        onClick={async () => {
-          await searchSet.ingest(userToIngest);
-          setUserToIngest(randomUser());
-        }}
-      >
-        Ingest user
-      </Button>
+      <div className="flex flex-col gap-2">
+        <Button
+          onClick={async () => {
+            setIsIngestDisabled(true);
+
+            await searchSet.ingest(userToIngest);
+            setUserToIngest(randomUser());
+
+            setIsIngestDisabled(false);
+          }}
+          disabled={isIngestDisabled}
+        >
+          Ingest user
+        </Button>
+
+        <Button
+          onClick={async () => {
+            setIsIngestDisabled(true);
+
+            let uToIng = userToIngest;
+            const allUsersToIngest = Array.from(new Array(10000).keys()).map(
+              () => {
+                const ret = uToIng;
+                uToIng = randomUser();
+                return ret;
+              },
+            );
+
+            await searchSet.ingest(...allUsersToIngest);
+
+            setUserToIngest(uToIng);
+
+            setIsIngestDisabled(false);
+          }}
+          disabled={isIngestDisabled}
+        >
+          Ingest user (10000x)
+        </Button>
+      </div>
       <Pre>{JSON.stringify(userToIngest, undefined, 2)}</Pre>
     </div>
   );

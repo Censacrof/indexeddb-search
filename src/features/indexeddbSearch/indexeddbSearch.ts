@@ -7,19 +7,14 @@ class FullTextSearchDatabase extends Dexie {
     super("FullTextSearchDatabase");
 
     this.version(1).stores({
-      indexedObject: "&id, *__words, *__syllables",
+      indexedObject: "&id, *__words, *__trigrams",
     });
   }
 }
 
-export type WordIndex = {
-  word: string;
-  occourrences: string[];
-};
-
 export type IndexedObject<T> = T & {
   __words: string[];
-  __syllables: string[];
+  __trigrams: string[];
 };
 
 export type User = {
@@ -41,23 +36,33 @@ function extractUserWords(user: User): Set<string> {
   ]);
 }
 
-function getSyllables(str: string): string[] {
+function getTrigrams(str: string): string[] {
   str = str.toLowerCase();
 
-  const syllables = new Array<string>();
-  for (let i = 1; i < str.length; i++) {
-    syllables.push(`${str[i - 1]}${str[i]}`);
+  const trigrams = new Array<string>();
+  for (let i = 2; i < str.length; i++) {
+    trigrams.push(`${str[i - 2]}${str[i - 1]}${str[i]}`);
   }
 
-  return syllables;
+  return trigrams;
 }
 
-function extractUserSyllables(user: User): Set<string> {
+function extractUserTrigrams(user: User): Set<string> {
   return new Set([
-    ...getSyllables(user.name),
-    ...getSyllables(user.address),
-    ...getSyllables(user.phoneNumber),
+    ...getTrigrams(user.name),
+    ...getTrigrams(user.address),
+    ...getTrigrams(user.phoneNumber),
   ]);
+}
+
+function doesUserHaveTerm(user: User, term: string) {
+  term = term.toLowerCase();
+
+  return (
+    user.name.toLowerCase().includes(term) ||
+    user.address.toLowerCase().includes(term) ||
+    user.phoneNumber.toLowerCase().includes(term)
+  );
 }
 
 export class SearchSet {
@@ -68,12 +73,12 @@ export class SearchSet {
 
     users.forEach((user) => {
       const words = extractUserWords(user);
-      const syllables = extractUserSyllables(user);
+      const trigrams = extractUserTrigrams(user);
 
       indexedObjectBulk.push({
         ...user,
         __words: [...words],
-        __syllables: [...syllables],
+        __trigrams: [...trigrams],
       });
     });
 
@@ -89,5 +94,25 @@ export class SearchSet {
       .startsWith(lowerCaseTerm)
       .distinct()
       .toArray();
+  }
+
+  async searchContains(term: string): Promise<User[]> {
+    const termTrigrams = getTrigrams(term);
+
+    return (
+      await this.db.indexedObject
+        .where("__trigrams")
+        .anyOf(termTrigrams)
+        .distinct()
+        .toArray()
+    ).filter((u) => {
+      const trigrams = new Set(u.__trigrams);
+      const hasAllTrigrams = termTrigrams.every((tt) => trigrams.has(tt));
+      if (!hasAllTrigrams) {
+        return false;
+      }
+
+      return doesUserHaveTerm(u, term);
+    });
   }
 }
