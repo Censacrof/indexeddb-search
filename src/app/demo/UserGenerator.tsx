@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { useState } from "react";
+import Button from "../../common/components/Button";
 import { User } from "../../features/indexeddbSearch/indexeddbSearch";
 import { useSearchSetContext } from "../App";
 
@@ -9,15 +10,14 @@ export default function UserGenerator() {
 
   return (
     <div className="flex gap-2">
-      <button
-        className="h-10 min-w-20 rounded bg-gray-300 px-2 text-gray-700 hover:bg-gray-200 hover:text-gray-600 active:bg-gray-100 active:text-gray-500"
+      <Button
         onClick={async () => {
           await searchSet.ingest(userToIngest);
           setUserToIngest(randomUser());
         }}
       >
         Ingest user
-      </button>
+      </Button>
       <pre className="rounded border border-gray-400 bg-gray-800 p-2">
         {JSON.stringify(userToIngest, undefined, 4)}
       </pre>
