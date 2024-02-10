@@ -1,14 +1,12 @@
 import Dexie from "dexie";
 
 class FullTextSearchDatabase extends Dexie {
-  wordIndex!: Dexie.Table<WordIndex, string>;
   indexedObject!: Dexie.Table<IndexedObject<User>, string>;
 
   constructor() {
     super("FullTextSearchDatabase");
 
     this.version(1).stores({
-      wordIndex: "&word",
       indexedObject: "&id, *__words",
     });
   }
@@ -45,57 +43,30 @@ function extractUserWords(user: User): Set<string> {
 export class SearchSet {
   constructor(private db = new FullTextSearchDatabase()) {}
 
-  async ingest(user: User) {
-    const words = [...extractUserWords(user)];
+  async ingest(...users: User[]) {
+    const indexedObjectBulk = new Array<IndexedObject<User>>();
+    // const wordIndexBulk = new Array<IndexedObject<User>>(users.length * 10);
 
-    await this.db.indexedObject.put({
-      ...user,
-      __words: words,
+    users.forEach((user) => {
+      const words = extractUserWords(user);
+
+      indexedObjectBulk.push({
+        ...user,
+        __words: [...words],
+      });
     });
 
-    await Promise.all(
-      [...words].map(async (word) => {
-        let wordIndex = await this.db.wordIndex.get(word);
-
-        if (!wordIndex) {
-          wordIndex = {
-            word,
-            occourrences: [user.id],
-          };
-        }
-
-        wordIndex.occourrences = [
-          ...new Set([...wordIndex.occourrences, user.id]),
-        ];
-        await this.db.wordIndex.put(wordIndex);
-      }),
-    );
+    console.log({ indexedObjectBulk });
+    await this.db.indexedObject.bulkPut(indexedObjectBulk);
   }
 
   async searchStartsWith(term: string): Promise<User[]> {
     const lowerCaseTerm = term.toLowerCase();
 
-    const wordIndices = await this.db.wordIndex
-      .where("word")
+    return await this.db.indexedObject
+      .where("__words")
       .startsWith(lowerCaseTerm)
       .distinct()
       .toArray();
-
-    const allOccourrences = new Set<string>();
-    for (const wordIndex of wordIndices) {
-      wordIndex.occourrences.forEach((occourrence) => {
-        allOccourrences.add(occourrence);
-      });
-    }
-
-    const result = (
-      await Promise.all(
-        [...allOccourrences].map((id) => this.db.indexedObject.get(id)),
-      )
-    ).filter((u): u is IndexedObject<User> => {
-      return !!u;
-    });
-
-    return result;
   }
 }
