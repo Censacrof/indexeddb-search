@@ -87,6 +87,10 @@ export class SearchSet {
   }
 
   async searchStartsWith(term: string): Promise<User[]> {
+    if (term.length < 3) {
+      return [];
+    }
+
     const lowerCaseTerm = term.toLowerCase();
 
     return await this.db.indexedObject
@@ -97,6 +101,10 @@ export class SearchSet {
   }
 
   async searchContains(term: string): Promise<User[]> {
+    if (term.length < 3) {
+      return [];
+    }
+
     const termTrigrams = getTrigrams(term);
 
     return (

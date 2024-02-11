@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createContext, useContext } from "react";
 import { SearchSet } from "../features/indexeddbSearch/indexeddbSearch";
 import Demo from "./demo/Demo";
@@ -21,14 +22,18 @@ export function useSearchSetContext() {
   return context;
 }
 
+const queryClient = new QueryClient();
+
 export default function App() {
   return (
-    <SearchSetContext.Provider
-      value={{
-        searchSet,
-      }}
-    >
-      <Demo />
-    </SearchSetContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <SearchSetContext.Provider
+        value={{
+          searchSet,
+        }}
+      >
+        <Demo />
+      </SearchSetContext.Provider>
+    </QueryClientProvider>
   );
 }

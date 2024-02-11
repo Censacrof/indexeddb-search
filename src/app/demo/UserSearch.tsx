@@ -1,7 +1,8 @@
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@uidotdev/usehooks";
-import { ChangeEventHandler, useEffect, useState } from "react";
+import { ChangeEventHandler, useState } from "react";
+import { twMerge } from "tailwind-merge";
 import Input from "../../common/components/Input";
-import { User } from "../../features/indexeddbSearch/indexeddbSearch";
 import { useSearchSetContext } from "../App";
 
 const searchModeValues = ["startsWith", "contains"] as const;
@@ -11,6 +12,7 @@ function isValidSearchMode(str: string): str is SearchMode {
 }
 
 export default function UserSearch() {
+  const { searchSet } = useSearchSetContext();
   const [searchMode, setSearchMode] = useState<SearchMode>("contains");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -23,7 +25,26 @@ export default function UserSearch() {
   };
 
   const debouncedSearchTerm = useDebounce(`${searchTerm}`, 250);
-  const result = useSearch(debouncedSearchTerm, searchMode);
+
+  const {
+    data: result,
+    isLoading,
+    isPlaceholderData,
+  } = useQuery({
+    queryKey: [debouncedSearchTerm, searchMode],
+    queryFn: async () => {
+      switch (searchMode) {
+        case "contains": {
+          return await searchSet.searchContains(debouncedSearchTerm);
+        }
+
+        case "startsWith": {
+          return await searchSet.searchStartsWith(debouncedSearchTerm);
+        }
+      }
+    },
+    placeholderData: keepPreviousData,
+  });
 
   return (
     <div className="flex flex-col gap-2">
@@ -59,7 +80,11 @@ export default function UserSearch() {
         />
       </div>
 
-      <table>
+      <table
+        className={twMerge(
+          (isLoading || isPlaceholderData) && "animate-pulse opacity-30",
+        )}
+      >
         <thead>
           <tr>
             <th>Id</th>
@@ -69,7 +94,7 @@ export default function UserSearch() {
           </tr>
         </thead>
         <tbody>
-          {result.map((user) => (
+          {result?.map((user) => (
             <tr key={user.id}>
               <td>{user.id}</td>
               <td>{user.name}</td>
@@ -81,25 +106,4 @@ export default function UserSearch() {
       </table>
     </div>
   );
-}
-
-function useSearch(term: string, mode: SearchMode) {
-  const { searchSet } = useSearchSetContext();
-  const [result, setResult] = useState<User[]>([]);
-
-  useEffect(() => {
-    switch (mode) {
-      case "contains": {
-        searchSet.searchContains(term).then((res) => setResult(res));
-        break;
-      }
-
-      case "startsWith": {
-        searchSet.searchContains(term).then((res) => setResult(res));
-        break;
-      }
-    }
-  }, [mode, searchSet, term]);
-
-  return result;
 }
