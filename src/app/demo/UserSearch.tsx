@@ -5,7 +5,7 @@ import { twMerge } from "tailwind-merge";
 import Input from "../../common/components/Input";
 import { useSearchSetContext } from "../App";
 
-const searchModeValues = ["startsWith", "contains"] as const;
+const searchModeValues = ["startsWith", "contains", "containsBrute"] as const;
 type SearchMode = (typeof searchModeValues)[number];
 function isValidSearchMode(str: string): str is SearchMode {
   return searchModeValues.includes(str as never);
@@ -41,6 +41,10 @@ export default function UserSearch() {
         case "startsWith": {
           return await searchSet.searchStartsWith(debouncedSearchTerm);
         }
+
+        case "containsBrute": {
+          return await searchSet.searchContainsBrute(debouncedSearchTerm);
+        }
       }
     },
     placeholderData: keepPreviousData,
@@ -59,25 +63,43 @@ export default function UserSearch() {
           }}
         />
 
-        <label htmlFor="startsWithMode">Starts With</label>
-        <Input
-          name="searchMode"
-          id="startsWithMode"
-          type="radio"
-          value="startsWith"
-          onChange={handleSearchModeChange}
-          checked={searchMode === "startsWith"}
-        />
+        <fieldset className="flex gap-6">
+          <div className="flex items-center gap-2">
+            <Input
+              name="searchMode"
+              id="startsWithMode"
+              type="radio"
+              value={"startsWith" satisfies SearchMode}
+              onChange={handleSearchModeChange}
+              checked={searchMode === "startsWith"}
+            />
+            <label htmlFor="startsWithMode">Starts With</label>
+          </div>
 
-        <label htmlFor="containsMode">Contains</label>
-        <Input
-          name="searchMode"
-          id="startsWithMode"
-          type="radio"
-          value="contains"
-          onChange={handleSearchModeChange}
-          checked={searchMode === "contains"}
-        />
+          <div className="flex items-center gap-2">
+            <Input
+              name="searchMode"
+              id="containsMode"
+              type="radio"
+              value={"contains" satisfies SearchMode}
+              onChange={handleSearchModeChange}
+              checked={searchMode === "contains"}
+            />
+            <label htmlFor="containsMode">Contains</label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Input
+              name="searchMode"
+              id="containsBruteMode"
+              type="radio"
+              value={"containsBrute" satisfies SearchMode}
+              onChange={handleSearchModeChange}
+              checked={searchMode === "containsBrute"}
+            />
+            <label htmlFor="containsBruteMode">Contains (brute)</label>
+          </div>
+        </fieldset>
       </div>
 
       <table

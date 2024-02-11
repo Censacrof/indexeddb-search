@@ -122,4 +122,16 @@ export class SearchSet {
       return doesUserHaveTerm(u, term);
     });
   }
+
+  async searchContainsBrute(term: string): Promise<User[]> {
+    if (term.length < 3) {
+      return [];
+    }
+
+    return await this.db.indexedObject
+      .filter((u) => {
+        return doesUserHaveTerm(u, term);
+      })
+      .toArray();
+  }
 }
