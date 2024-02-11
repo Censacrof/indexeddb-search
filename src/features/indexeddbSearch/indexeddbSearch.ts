@@ -82,7 +82,6 @@ export class SearchSet {
       });
     });
 
-    console.log({ indexedObjectBulk });
     await this.db.indexedObject.bulkPut(indexedObjectBulk);
   }
 
