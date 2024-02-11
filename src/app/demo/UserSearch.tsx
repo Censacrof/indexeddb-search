@@ -3,6 +3,7 @@ import { useDebounce } from "@uidotdev/usehooks";
 import { ChangeEventHandler, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import Input from "../../common/components/Input";
+import { User } from "../../features/indexeddbSearch/indexeddbSearch";
 import { useSearchSetContext } from "../App";
 
 const searchModeValues = ["startsWith", "contains", "containsBrute"] as const;
@@ -12,7 +13,6 @@ function isValidSearchMode(str: string): str is SearchMode {
 }
 
 export default function UserSearch() {
-  const { searchSet } = useSearchSetContext();
   const [searchMode, setSearchMode] = useState<SearchMode>("contains");
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -26,29 +26,7 @@ export default function UserSearch() {
 
   const debouncedSearchTerm = useDebounce(`${searchTerm}`, 250);
 
-  const {
-    data: result,
-    isLoading,
-    isPlaceholderData,
-  } = useQuery({
-    queryKey: [debouncedSearchTerm, searchMode],
-    queryFn: async () => {
-      switch (searchMode) {
-        case "contains": {
-          return await searchSet.searchContains(debouncedSearchTerm);
-        }
-
-        case "startsWith": {
-          return await searchSet.searchStartsWith(debouncedSearchTerm);
-        }
-
-        case "containsBrute": {
-          return await searchSet.searchContainsBrute(debouncedSearchTerm);
-        }
-      }
-    },
-    placeholderData: keepPreviousData,
-  });
+  const searchQuery = useSearchUsers({ term: debouncedSearchTerm, searchMode });
 
   return (
     <div className="flex flex-col gap-2">
@@ -104,30 +82,74 @@ export default function UserSearch() {
         </fieldset>
       </div>
 
-      <table
-        className={twMerge(
-          (isLoading || isPlaceholderData) && "animate-pulse opacity-30",
-        )}
-      >
-        <thead>
-          <tr>
-            <th>Id</th>
-            <th>Name</th>
-            <th>Address</th>
-            <th>Phone Number</th>
-          </tr>
-        </thead>
-        <tbody>
-          {result?.map((user) => (
-            <tr key={user.id}>
-              <td>{user.id}</td>
-              <td>{user.name}</td>
-              <td>{user.address}</td>
-              <td>{user.phoneNumber}</td>
+      <div className="flex flex-col gap-2">
+        <span>
+          Returned {searchQuery.data?.result.length} records in{" "}
+          {searchQuery.data?.tookMs}ms
+        </span>
+        <table
+          className={twMerge(
+            (searchQuery.isLoading || searchQuery.isPlaceholderData) &&
+              "animate-pulse opacity-30",
+          )}
+        >
+          <thead>
+            <tr>
+              <th>Id</th>
+              <th>Name</th>
+              <th>Address</th>
+              <th>Phone Number</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {searchQuery.data?.result.map((user) => (
+              <tr key={user.id}>
+                <td>{user.id}</td>
+                <td>{user.name}</td>
+                <td>{user.address}</td>
+                <td>{user.phoneNumber}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
+}
+
+function useSearchUsers({
+  term: debouncedSearchTerm,
+  searchMode,
+}: {
+  term: string;
+  searchMode: SearchMode;
+}) {
+  const { searchSet } = useSearchSetContext();
+
+  return useQuery({
+    queryKey: [debouncedSearchTerm, searchMode],
+    queryFn: async () => {
+      let result: User[];
+      const startTime = Date.now();
+      switch (searchMode) {
+        case "contains": {
+          result = await searchSet.searchContains(debouncedSearchTerm);
+          break;
+        }
+
+        case "startsWith": {
+          result = await searchSet.searchStartsWith(debouncedSearchTerm);
+          break;
+        }
+
+        case "containsBrute": {
+          result = await searchSet.searchContainsBrute(debouncedSearchTerm);
+          break;
+        }
+      }
+
+      return { result, tookMs: Date.now() - startTime };
+    },
+    placeholderData: keepPreviousData,
+  });
 }
