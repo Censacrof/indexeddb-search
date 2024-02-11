@@ -52,7 +52,7 @@ export default function UserSearch() {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex gap-2">
+      <div className="flex items-end gap-4">
         <Input
           className="h-8 rounded bg-gray-50 px-2 text-gray-900"
           type="text"
@@ -64,6 +64,8 @@ export default function UserSearch() {
         />
 
         <fieldset className="flex gap-6">
+          <legend className="text-gray-400">Search mode</legend>
+
           <div className="flex items-center gap-2">
             <Input
               name="searchMode"
