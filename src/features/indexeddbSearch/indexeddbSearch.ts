@@ -2,19 +2,25 @@ import Dexie from "dexie";
 
 class FullTextSearchDatabase extends Dexie {
   indexedObject!: Dexie.Table<IndexedObject<User>, string>;
+  wordIndex!: Dexie.Table<WordIndex, string>;
 
   constructor() {
     super("FullTextSearchDatabase");
 
     this.version(1).stores({
-      indexedObject: "&id, *__words, *__trigrams",
+      indexedObject: "&id, *__words",
+      wordIndex: "&word, *__parts",
     });
   }
 }
 
 export type IndexedObject<T> = T & {
   __words: string[];
-  __trigrams: string[];
+};
+
+export type WordIndex = {
+  word: string;
+  __parts: string[];
 };
 
 export type User = {
@@ -38,24 +44,13 @@ function extractUserWords(user: User): Set<string> {
   ]);
 }
 
-function getTrigrams(str: string): string[] {
-  str = str.toLowerCase();
-
-  const trigrams = new Array<string>();
-  for (let i = 2; i < str.length; i++) {
-    trigrams.push(`${str[i - 2]}${str[i - 1]}${str[i]}`);
+function getWordParts(word: string): string[] {
+  const parts = new Array<string>();
+  for (let i = 0; i < word.length; i++) {
+    parts.push(word.substring(i));
   }
 
-  return trigrams;
-}
-
-function extractUserTrigrams(user: User): Set<string> {
-  return new Set([
-    ...getTrigrams(user.name),
-    ...getTrigrams(user.address),
-    ...getTrigrams(user.phoneNumber),
-    ...getTrigrams(user.note),
-  ]);
+  return parts;
 }
 
 function doesUserHaveTerm(user: User, term: string) {
@@ -74,19 +69,39 @@ export class SearchSet {
 
   async ingest(...users: User[]) {
     const indexedObjectBulk = new Array<IndexedObject<User>>();
+    const wordIndexToBulkMap = new Map<string, WordIndex>();
 
     users.forEach((user) => {
       const words = extractUserWords(user);
-      const trigrams = extractUserTrigrams(user);
 
       indexedObjectBulk.push({
         ...user,
         __words: [...words],
-        __trigrams: [...trigrams],
       });
+
+      for (const word of words) {
+        if (wordIndexToBulkMap.has(word)) {
+          continue;
+        }
+
+        wordIndexToBulkMap.set(word, {
+          word,
+          __parts: getWordParts(word),
+        });
+      }
     });
 
-    await this.db.indexedObject.bulkPut(indexedObjectBulk);
+    await this.db.transaction(
+      "rw",
+      this.db.wordIndex,
+      this.db.indexedObject,
+      async () => {
+        await Promise.all([
+          this.db.indexedObject.bulkPut(indexedObjectBulk),
+          this.db.wordIndex.bulkPut([...wordIndexToBulkMap.values()]),
+        ]);
+      },
+    );
   }
 
   async searchStartsWith(term: string): Promise<User[]> {
@@ -106,27 +121,8 @@ export class SearchSet {
   }
 
   async searchContains(term: string): Promise<User[]> {
-    if (term.length < 3) {
-      return [];
-    }
-
-    const termTrigrams = getTrigrams(term);
-
-    return (
-      await this.db.indexedObject
-        .where("__trigrams")
-        .anyOf(termTrigrams)
-        .distinct()
-        .toArray()
-    ).filter((u) => {
-      const trigrams = new Set(u.__trigrams);
-      const hasAllTrigrams = termTrigrams.every((tt) => trigrams.has(tt));
-      if (!hasAllTrigrams) {
-        return false;
-      }
-
-      return doesUserHaveTerm(u, term);
-    });
+    term;
+    return [];
   }
 
   async searchContainsBrute(term: string): Promise<User[]> {
