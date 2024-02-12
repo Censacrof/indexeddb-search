@@ -135,7 +135,10 @@ function useSearchUsers({
       const startTime = Date.now();
       switch (searchMode) {
         case "contains": {
-          result = await searchSet.searchContains(debouncedSearchTerm);
+          result =
+            await searchSet.getContainsSearchPotentialMatches(
+              debouncedSearchTerm,
+            );
           break;
         }
 
