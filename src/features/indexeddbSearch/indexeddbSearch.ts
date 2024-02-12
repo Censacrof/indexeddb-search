@@ -22,6 +22,7 @@ export type User = {
   name: string;
   address: string;
   phoneNumber: string;
+  note: string;
 };
 
 function getWords(str: string): string[] {
@@ -33,6 +34,7 @@ function extractUserWords(user: User): Set<string> {
     ...getWords(user.name),
     ...getWords(user.address),
     ...getWords(user.phoneNumber),
+    ...getWords(user.note),
   ]);
 }
 
@@ -52,6 +54,7 @@ function extractUserTrigrams(user: User): Set<string> {
     ...getTrigrams(user.name),
     ...getTrigrams(user.address),
     ...getTrigrams(user.phoneNumber),
+    ...getTrigrams(user.note),
   ]);
 }
 
@@ -61,7 +64,8 @@ function doesUserHaveTerm(user: User, term: string) {
   return (
     user.name.toLowerCase().includes(term) ||
     user.address.toLowerCase().includes(term) ||
-    user.phoneNumber.toLowerCase().includes(term)
+    user.phoneNumber.toLowerCase().includes(term) ||
+    user.note.toLocaleLowerCase().includes(term)
   );
 }
 

@@ -7,7 +7,7 @@ export default function Pre({ className, ...props }: PreProps) {
   return (
     <pre
       className={twMerge(
-        "rounded border border-gray-400 bg-gray-800 p-2",
+        "whitespace-pre-wrap rounded border border-gray-400 bg-gray-800 p-2",
         className,
       )}
       {...props}

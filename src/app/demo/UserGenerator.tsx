@@ -12,7 +12,7 @@ export default function UserGenerator() {
 
   return (
     <div className="flex gap-2">
-      <div className="flex flex-col gap-2">
+      <div className="flex shrink-0 flex-col gap-2">
         <Button
           onClick={async () => {
             setIsIngestDisabled(true);
@@ -62,5 +62,6 @@ function randomUser(): User {
     address: faker.location.streetAddress(),
     name: faker.person.fullName(),
     phoneNumber: faker.phone.number(),
+    note: faker.lorem.paragraphs(),
   };
 }

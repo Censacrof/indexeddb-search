@@ -99,15 +99,17 @@ export default function UserSearch() {
               <th>Name</th>
               <th>Address</th>
               <th>Phone Number</th>
+              <th>Note</th>
             </tr>
           </thead>
           <tbody>
             {searchQuery.data?.result.map((user) => (
-              <tr key={user.id}>
-                <td>{user.id}</td>
+              <tr key={user.id} className="p-2 text-sm even:bg-gray-700">
+                <td className="pl-2-2">{user.id}</td>
                 <td>{user.name}</td>
                 <td>{user.address}</td>
                 <td>{user.phoneNumber}</td>
+                <td className="pr-2 text-xs">{user.note}</td>
               </tr>
             ))}
           </tbody>
