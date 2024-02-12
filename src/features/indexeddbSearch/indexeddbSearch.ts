@@ -91,11 +91,13 @@ export class SearchSet {
     }
 
     const lowerCaseTerm = term.toLowerCase();
+    const termWords = getWords(lowerCaseTerm);
 
     return await this.db.indexedObject
       .where("__words")
-      .startsWith(lowerCaseTerm)
+      .startsWithAnyOf(termWords)
       .distinct()
+      .filter((u) => doesUserHaveTerm(u, term))
       .toArray();
   }
 
