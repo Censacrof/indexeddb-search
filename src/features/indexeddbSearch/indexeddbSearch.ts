@@ -122,6 +122,7 @@ export class SearchSet {
   }
 
   async searchStartsWith(term: string): Promise<User[]> {
+    term = term.trim();
     if (term.length < 3) {
       return [];
     }
@@ -137,12 +138,26 @@ export class SearchSet {
       .toArray();
   }
 
-  async getContainsSearchPotentialMatches(term: string): Promise<User[]> {
+  async searchContains(term: string) {
+    term = term.trim();
+    if (term.length < 3) {
+      return [];
+    }
+
     const termWords = getWords(term);
     if (termWords.length === 0) {
       return [];
     }
 
+    const potentialMatches =
+      await this.getContainsSearchPotentialMatches(termWords);
+
+    return potentialMatches.filter((u) => doesUserHaveTerm(u, term));
+  }
+
+  async getContainsSearchPotentialMatches(
+    termWords: string[],
+  ): Promise<User[]> {
     let potentialMatchObjectIds: Set<string>;
     if (termWords.length === 1) {
       // single word query
@@ -222,6 +237,7 @@ export class SearchSet {
   }
 
   async searchContainsBrute(term: string): Promise<User[]> {
+    term = term.trim();
     if (term.length < 3) {
       return [];
     }
