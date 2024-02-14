@@ -52,8 +52,9 @@ export default function UserSearch() {
               value={"startsWith" satisfies SearchMode}
               onChange={handleSearchModeChange}
               checked={searchMode === "startsWith"}
+              disabled
             />
-            <label htmlFor="startsWithMode">Starts With</label>
+            <label htmlFor="startsWithMode">Starts With (coming soon)</label>
           </div>
 
           <div className="flex items-center gap-2">
