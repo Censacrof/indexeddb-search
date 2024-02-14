@@ -66,7 +66,7 @@ export default function UserSearch() {
               onChange={handleSearchModeChange}
               checked={searchMode === "contains"}
             />
-            <label htmlFor="containsMode">Contains</label>
+            <label htmlFor="containsMode">Contains (optimized)</label>
           </div>
 
           <div className="flex items-center gap-2">
@@ -78,7 +78,7 @@ export default function UserSearch() {
               onChange={handleSearchModeChange}
               checked={searchMode === "containsBrute"}
             />
-            <label htmlFor="containsBruteMode">Contains (brute)</label>
+            <label htmlFor="containsBruteMode">Contains (full db scan)</label>
           </div>
         </fieldset>
       </div>
