@@ -6,7 +6,7 @@ IndexedDB-Search is a proof-of-concept (POC) implementation that demonstrates fu
 
 ## Live Demo
 
-Experience the functionality of IndexedDB-Search through our live demo: [IndexedDB-Search Demo](https://censacrof.github.io/indexeddb-search/)
+Try it for yourself: [IndexedDB-Search Demo](https://censacrof.github.io/indexeddb-search/)
 
 Ensure you have a modern web browser that supports IndexedDB.
 
